@@ -640,9 +640,9 @@
 
     const resetBtn = document.getElementById("reset");
     resetBtn.addEventListener("click", () => {
-      camera.position.set(0, 0.7, 3.4);
+      hasInteracted = false;
       controls.target.set(0, 0, 0);
-      controls.update();
+      applyViewportCamera(true);
     });
 
     const toggleBtn = document.getElementById("toggle-anim");
