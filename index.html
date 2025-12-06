@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pianeta 3D</title>
+  <meta property="og:title" content="Pianeta 3D interattivo">
+  <meta property="og:description" content="Esplora un pianeta 3D con isole luminose e controlli touch/drag.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="favicon.png">
+  <meta property="og:locale" content="it_IT">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" sizes="any">
+  <link rel="icon" type="image/png" href="favicon.png" sizes="16x16 32x32 48x48 64x64">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.png">
+  <style>
+    :root {
+      --bg-1: #03060f;
+      --bg-2: #0b1533;
+      --accent: #7ad7ff;
+      --accent-2: #ffb6ff;
+      --text: #f4f7ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(120% 120% at 30% 20%, #10204d 0%, #070d24 45%, #03060f 100%);
+      color: var(--text);
+      font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; }
+    #ui {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(20, 32, 76, 0.85), rgba(10, 16, 36, 0.85));
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+    }
+    #ui h1 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+    }
+    #ui p {
+      margin: 0;
+      max-width: 240px;
+      line-height: 1.5;
+      color: #c7d0ff;
+    }
+    #ui .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.5; }
+    }
+    #controls {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      display: flex;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(7, 10, 24, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+    }
+    #controls button {
+      appearance: none;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: var(--text);
+      background: linear-gradient(135deg, #2450c2, #1bb1e7);
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s;
+    }
+    #controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.4);
+      filter: brightness(1.05);
+    }
+    #controls button:active { transform: translateY(0); }
+    #info {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      min-width: 240px;
+      max-width: 320px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(12, 16, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    #info h2 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+    }
+    @media (max-width: 1024px) {
+      #ui {
+        top: 16px;
+        left: 16px;
+        padding: 12px 14px;
+      }
+      #controls {
+        right: 16px;
+        bottom: 16px;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #controls button {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      #info {
+        left: 16px;
+        bottom: 16px;
+        max-width: 280px;
+      }
+    }
+    @media (max-width: 640px) {
+      body { font-size: 14px; }
+      #ui {
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 32px);
+        max-width: 360px;
+        text-align: center;
+      }
+      #controls {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        bottom: 16px;
+        width: calc(100% - 32px);
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      #controls button {
+        flex: 1 1 140px;
+        min-width: 120px;
+      }
+      #info {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 96px;
+        width: calc(100% - 32px);
+        max-width: 420px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1><span class="dot"></span>Pianeta in 3D</h1>
+    <p>Pianeta 3D con luce morbida. Trascina per ruotare, scorri per zoom.</p>
+  </div>
+  <div id="controls">
+    <button id="reset">Reset vista</button>
+    <button id="toggle-anim">Pausa/Play</button>
+  </div>
+  <div id="info">
+    <h2>Seleziona un'isola</h2>
+    <div id="info-text">Gira la sfera e clicca sulle isole luminose per aprire il menu.</div>
+  </div>
+
+  <script src="./libs/three.min.js"></script>
+  <script src="./libs/OrbitControls.js"></script>
+  <script>
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = null;
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 0.7, 3.4);
+
+    let isAnimating = true;
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 1.6;
+    controls.maxDistance = 6;
+
+    // Campo stelle nello sfondo (punti discreti)
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 2000;
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const r = 18 + Math.random() * 32;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPos[i * 3 + 1] = r * Math.cos(phi);
+      starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(
+      starGeo,
+      new THREE.PointsMaterial({ color: "#ffffff", size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.75 })
+    );
+    scene.add(stars);
+
+    const planetUniforms = {
+      uLightDir: { value: new THREE.Vector3(0.8, 0.5, 1).normalize() },
+      uBaseColor: { value: new THREE.Color("#194d96") },
+      uAmbient: { value: new THREE.Color("#11366b") },
+      uIslands: { value: [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()] },
+      uIslandSize: { value: new Float32Array([0, 0, 0, 0, 0]) },
+      uIslandColor: { value: [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()] },
+      uIslandSeed: { value: new Float32Array([0, 0, 0, 0, 0]) },
+      uIslandSeed2: { value: new Float32Array([0, 0, 0, 0, 0]) },
+      uIslandSeed3: { value: new Float32Array([0, 0, 0, 0, 0]) },
+      uIslandWobble: { value: new Float32Array([1, 1, 1, 1, 1]) },
+      uIslandStretchLat: { value: new Float32Array([1, 1, 1, 1, 1]) },
+      uIslandStretchLon: { value: new Float32Array([1, 1, 1, 1, 1]) },
+      uIslandCut: { value: new Float32Array([0, 0, 0, 0, 0]) },
+      uHomePoly: { value: Array.from({ length: 32 }, () => new THREE.Vector2()) },
+      uHomePolyCount: { value: 0 },
+      uPoly2: { value: Array.from({ length: 32 }, () => new THREE.Vector2()) },
+      uPoly2Count: { value: 0 },
+      uPoly3: { value: Array.from({ length: 32 }, () => new THREE.Vector2()) },
+      uPoly3Count: { value: 0 },
+      uIslandCount: { value: 0 }
+    };
+
+    const planet = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 96, 72),
+      new THREE.ShaderMaterial({
+        uniforms: planetUniforms,
+        vertexShader: `
+          precision highp float;
+          varying vec3 vNormalWorld;
+          varying vec3 vNormalObj;
+          void main() {
+            vNormalWorld = normalize(normalMatrix * normal);
+            vNormalObj = normalize(normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          precision highp float;
+          const int MAX_ISLANDS = 5;
+          uniform vec3 uLightDir;
+          uniform vec3 uBaseColor;
+          uniform vec3 uAmbient;
+          uniform vec3 uIslands[MAX_ISLANDS];
+          uniform float uIslandSize[MAX_ISLANDS];
+          uniform vec3 uIslandColor[MAX_ISLANDS];
+          uniform float uIslandSeed[MAX_ISLANDS];
+          uniform float uIslandSeed2[MAX_ISLANDS];
+          uniform float uIslandSeed3[MAX_ISLANDS];
+          uniform float uIslandWobble[MAX_ISLANDS];
+          uniform float uIslandStretchLat[MAX_ISLANDS];
+          uniform float uIslandStretchLon[MAX_ISLANDS];
+          uniform float uIslandCut[MAX_ISLANDS];
+          uniform vec2 uHomePoly[32];
+          uniform int uHomePolyCount;
+          uniform vec2 uPoly2[32];
+          uniform int uPoly2Count;
+          uniform vec2 uPoly3[32];
+          uniform int uPoly3Count;
+          uniform int uIslandCount;
+          varying vec3 vNormalWorld;
+          varying vec3 vNormalObj;
+
+          float sdSegment(vec2 p, vec2 a, vec2 b) {
+            vec2 pa = p - a;
+            vec2 ba = b - a;
+            float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+            return length(pa - ba * h);
+          }
+
+          float polyMask(vec2 p) {
+            // winding for inside test
+            bool inside = false;
+            float minDist = 1e6;
+            for (int i = 0; i < 31; i++) {
+              if (i >= uHomePolyCount) break;
+              vec2 a = uHomePoly[i];
+              vec2 b = uHomePoly[(i + 1) % uHomePolyCount];
+              if (((a.y > p.y) != (b.y > p.y)) && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y + 1e-5) + a.x)) {
+                inside = !inside;
+              }
+              float d = sdSegment(p, a, b);
+              if (d < minDist) minDist = d;
+            }
+            if (!inside) return 0.0;
+            return smoothstep(0.08, 0.0, minDist); // soft edge
+          }
+
+          void main() {
+            vec3 nWorld = normalize(vNormalWorld);
+            vec3 nObj = normalize(vNormalObj);
+            float diff = max(dot(nWorld, normalize(uLightDir)), 0.0);
+            vec3 color = uBaseColor * (0.4 + 0.8 * diff) + uAmbient * 0.6;
+            float rim = pow(1.0 - max(dot(nWorld, vec3(0.0, 0.0, 1.0)), 0.0), 2.0);
+            color += uBaseColor * rim * 0.15;
+
+            for (int i = 0; i < MAX_ISLANDS; i++) {
+              if (i >= uIslandCount) break;
+              vec3 dir = normalize(uIslands[i]);
+              float ang = acos(clamp(dot(nObj, dir), -1.0, 1.0));
+              float size = uIslandSize[i];
+              float edge = size * 0.7;
+              float mask = 0.0;
+              float strokeFactor = 0.0;
+              if (i == 0) {
+                // Home: profilo poligonale (Groenlandia)
+                vec3 tangent = normalize(cross(dir, vec3(0.0, 1.0, 0.0)));
+                if (length(tangent) < 0.3) tangent = normalize(cross(dir, vec3(1.0, 0.0, 0.0)));
+                vec3 bitangent = normalize(cross(dir, tangent));
+                vec2 local = vec2(dot(nObj, tangent), dot(nObj, bitangent)) / size;
+                float minDist = 1e6;
+                bool inside = false;
+                for (int j = 0; j < 31; j++) {
+                  if (j >= uHomePolyCount) break;
+                  vec2 a = uHomePoly[j];
+                  vec2 b = uHomePoly[(j + 1) % uHomePolyCount];
+                  if (((a.y > local.y) != (b.y > local.y)) && (local.x < (b.x - a.x) * (local.y - a.y) / (b.y - a.y + 1e-5) + a.x)) {
+                    inside = !inside;
+                  }
+                  float d = sdSegment(local, a, b);
+                  if (d < minDist) minDist = d;
+                }
+                if (inside) mask = 1.0; else mask = 0.0;
+                strokeFactor = smoothstep(0.0, 0.02, minDist);
+              } else if (i == 1) {
+                // Islanda: profilo poligonale dedicato
+                vec3 tangent = normalize(cross(dir, vec3(0.0, 1.0, 0.0)));
+                if (length(tangent) < 0.3) tangent = normalize(cross(dir, vec3(1.0, 0.0, 0.0)));
+                vec3 bitangent = normalize(cross(dir, tangent));
+                vec2 local = vec2(dot(nObj, tangent), dot(nObj, bitangent)) / size;
+                // winding test e min distance su poly2
+                bool inside2 = false;
+                float minDist2 = 1e6;
+                for (int j = 0; j < 31; j++) {
+                  if (j >= uPoly2Count) break;
+                  vec2 a = uPoly2[j];
+                  vec2 b = uPoly2[(j + 1) % uPoly2Count];
+                  if (((a.y > local.y) != (b.y > local.y)) && (local.x < (b.x - a.x) * (local.y - a.y) / (b.y - a.y + 1e-5) + a.x)) {
+                    inside2 = !inside2;
+                  }
+                  float d = sdSegment(local, a, b);
+                  if (d < minDist2) minDist2 = d;
+                }
+                if (inside2) mask = 1.0; else mask = 0.0;
+                strokeFactor = smoothstep(0.0, 0.02, minDist2);
+              } else if (i == 2) {
+                // Sud America: profilo poligonale dedicato
+                vec3 tangent = normalize(cross(dir, vec3(0.0, 1.0, 0.0)));
+                if (length(tangent) < 0.3) tangent = normalize(cross(dir, vec3(1.0, 0.0, 0.0)));
+                vec3 bitangent = normalize(cross(dir, tangent));
+                vec2 local = vec2(dot(nObj, tangent), dot(nObj, bitangent)) / size;
+                bool inside3 = false;
+                float minDist3 = 1e6;
+                for (int j = 0; j < 31; j++) {
+                  if (j >= uPoly3Count) break;
+                  vec2 a = uPoly3[j];
+                  vec2 b = uPoly3[(j + 1) % uPoly3Count];
+                  if (((a.y > local.y) != (b.y > local.y)) && (local.x < (b.x - a.x) * (local.y - a.y) / (b.y - a.y + 1e-5) + a.x)) {
+                    inside3 = !inside3;
+                  }
+                  float d = sdSegment(local, a, b);
+                  if (d < minDist3) minDist3 = d;
+                }
+                if (inside3) mask = 1.0; else mask = 0.0;
+                strokeFactor = smoothstep(0.0, 0.02, minDist3);
+              } else {
+                // altre isole con wobble procedurale
+                float lon = atan(nObj.z, nObj.x) * uIslandStretchLon[i];
+                float lat = asin(clamp(nObj.y, -1.0, 1.0)) * uIslandStretchLat[i];
+                float s1 = uIslandSeed[i];
+                float s2 = uIslandSeed2[i];
+                float s3 = uIslandSeed3[i];
+                float wobble = (sin(lon * (1.5 + s1)) + cos(lat * (1.8 + s2))) * 0.06 * size;
+                wobble += sin((lon + lat) * (2.4 + s1 * 0.5)) * 0.04 * size;
+                wobble += sin(lon * (3.0 + s3) + lat * (2.2 + s2)) * 0.03 * size;
+                wobble *= uIslandWobble[i];
+                float sizeVar = size + wobble;
+                float edgeVar = sizeVar * 0.7;
+                float fill = step(ang, sizeVar);
+                mask = fill;
+                float edgeDist = max(0.0, ang - sizeVar);
+                strokeFactor = smoothstep(0.0, 0.02, edgeDist);
+                if (uIslandCut[i] > 0.5) {
+                  // taglio longitudinale: mantieni solo metà lungo l'asse tangente
+                  vec3 tangent = normalize(cross(dir, vec3(0.0, 1.0, 0.0)));
+                  if (length(tangent) < 0.3) tangent = normalize(cross(dir, vec3(1.0, 0.0, 0.0)));
+                  vec3 bitangent = normalize(cross(dir, tangent));
+                  float localX = dot(nObj, tangent) / size;
+                  float cutMask = smoothstep(0.0, 0.08, localX);
+                  mask *= cutMask;
+                }
+              }
+              vec3 islandCol = vec3(1.0); // bianco pieno
+              color = mix(color, islandCol, mask);
+            }
+
+            gl_FragColor = vec4(color, 1.0);
+          }
+        `,
+        transparent: false
+      })
+    );
+    scene.add(planet);
+
+    const atmosphereMaterial = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color("#7ecfff") } },
+      vertexShader: `
+        precision highp float;
+
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+
+        varying vec3 vNormal;
+        uniform vec3 uColor;
+        void main() {
+          float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+          gl_FragColor = vec4(uColor, 1.0) * intensity;
+        }
+      `,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.08, 96, 64), atmosphereMaterial);
+    scene.add(atmosphere);
+
+    // Isole-menu distribuite random sulla superficie (flat decals)
+    const menuItems = [
+      { title: "Home", desc: "Panoramica generale." },
+      { title: "Islanda", desc: "Isola verde acqua stile Islanda." },
+      { title: "SudAmerica", desc: "Isola in stile Sud America." }
+    ];
+
+    // Profili stilizzati ispirati a grandi isole (forme diverse, aderenti via shader)
+    const islandProfiles = {
+      Home:        { size: 0.9,  color: "#ffffff", seed1: 2.6, seed2: 3.1, seed3: 2.2, wobble: 1.25, stretchLat: 1.35, stretchLon: 0.9 }, // Groenlandia (ridotta)
+      Islanda:     { size: 0.56, color: "#ffffff", seed1: 2.8, seed2: 1.4, seed3: 3.5, wobble: 1.6, stretchLat: 1.0, stretchLon: 1.0, cut: 0 }, // Islanda poligonale (ghiaccio)
+      SudAmerica:  { size: 0.72, color: "#ffffff", seed1: 2.2, seed2: 2.0, seed3: 3.1, wobble: 1.8, stretchLat: 1.1, stretchLon: 0.95, cut: 0 } // Sud America stilizzato ghiacciato
+    };
+
+    // Profilo Groenlandia in locale 2D (tangent plane), chiuso, range circa [-0.6,0.6]
+    const homePoly = [
+      [-0.32, 0.62], [-0.2, 0.7], [0.0, 0.75], [0.18, 0.7], [0.32, 0.62],
+      [0.42, 0.5], [0.45, 0.34], [0.38, 0.18], [0.3, 0.05], [0.28, -0.08],
+      [0.33, -0.24], [0.3, -0.38], [0.2, -0.5], [0.08, -0.58], [-0.05, -0.62],
+      [-0.2, -0.58], [-0.28, -0.48], [-0.36, -0.32], [-0.4, -0.12], [-0.38, 0.12],
+      [-0.42, 0.32], [-0.38, 0.48]
+    ];
+
+    // Profilo Islanda (poligono stilizzato)
+    const icelandPoly = [
+      [-0.24, 0.28], [-0.1, 0.36], [0.04, 0.34], [0.16, 0.28], [0.24, 0.18],
+      [0.22, 0.06], [0.18, -0.02], [0.12, -0.08], [0.16, -0.18], [0.08, -0.24],
+      [-0.02, -0.22], [-0.12, -0.26], [-0.2, -0.2], [-0.18, -0.1], [-0.24, -0.02],
+      [-0.28, 0.1]
+    ];
+
+    // Profilo Sud America (poligono stilizzato)
+    const southPoly = [
+      [0.1, 0.6], [0.22, 0.48], [0.2, 0.32], [0.12, 0.18], [0.14, 0.05],
+      [0.18, -0.08], [0.12, -0.2], [0.05, -0.32], [0.08, -0.44], [0.02, -0.58],
+      [-0.04, -0.64], [-0.12, -0.6], [-0.18, -0.48], [-0.16, -0.32], [-0.2, -0.18],
+      [-0.18, -0.05], [-0.22, 0.08], [-0.2, 0.22], [-0.12, 0.36], [-0.08, 0.5]
+    ];
+
+    const usedPoints = [];
+
+    function makeIslandShape(radius = 0.1, variance = 0.35, segments = 18) {
+      const shape = new THREE.Shape();
+      let firstX = 0, firstY = 0;
+      for (let i = 0; i < segments; i++) {
+        const a = (i / segments) * Math.PI * 2;
+        const r = radius * (1 + (Math.random() - 0.5) * variance);
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        if (i === 0) {
+          shape.moveTo(x, y);
+          firstX = x; firstY = y;
+        } else {
+          shape.lineTo(x, y);
+        }
+      }
+      shape.lineTo(firstX, firstY);
+      return new THREE.ShapeGeometry(shape);
+    }
+
+    // Forma stilizzata tipo Groenlandia, allungata verticalmente
+    function makeGreenlandShape(scale = 0.18) {
+      const pts = [
+        [-0.18, 0.35], [-0.12, 0.42], [0.0, 0.45], [0.08, 0.42], [0.12, 0.36],
+        [0.16, 0.25], [0.13, 0.18], [0.11, 0.08], [0.14, -0.05], [0.12, -0.16],
+        [0.07, -0.26], [0.02, -0.33], [-0.05, -0.36], [-0.1, -0.33], [-0.13, -0.28],
+        [-0.16, -0.18], [-0.12, -0.06], [-0.14, 0.05], [-0.18, 0.16], [-0.17, 0.28]
+      ];
+      const shape = new THREE.Shape();
+      pts.forEach(([x, y], i) => {
+        const px = x * scale;
+        const py = y * scale;
+        if (i === 0) shape.moveTo(px, py);
+        else shape.lineTo(px, py);
+      });
+      shape.closePath();
+      return new THREE.ShapeGeometry(shape, 1);
+    }
+
+    function randomPointOnSphere(radius = 1.0, attempts = 50, minAngle = 0.5, used = usedPoints) {
+      // minAngle in radians to keep islands separated
+      return () => {
+        for (let i = 0; i < attempts; i++) {
+          const phi = Math.acos(2 * Math.random() - 1); // 0..pi
+          const theta = Math.random() * Math.PI * 2;   // 0..2pi
+          const v = new THREE.Vector3().setFromSphericalCoords(radius, phi, theta);
+          const ok = used.every(u => u.angleTo(v) > minAngle);
+          if (ok || used.length === 0) {
+            used.push(v.clone());
+            return v;
+          }
+        }
+        return used[0] ? used[0].clone() : new THREE.Vector3(radius, 0, 0);
+      };
+    }
+    // Direzioni fisse basate sui vertici di un tetraedro per massimizzare la distanza
+    const homeDir = new THREE.Vector3(1, 1, 1).normalize();
+    const islandaDir = new THREE.Vector3(-1, -1, 1).normalize();
+    const sudDir = new THREE.Vector3(1, -1, -1).normalize();
+    const pickPoint = randomPointOnSphere(1.0, 200, 1.25, usedPoints);
+
+    // carica profilo Groenlandia negli uniform
+    planetUniforms.uHomePolyCount.value = Math.min(homePoly.length, 32);
+    for (let i = 0; i < planetUniforms.uHomePolyCount.value; i++) {
+      planetUniforms.uHomePoly.value[i].set(homePoly[i][0], homePoly[i][1]);
+    }
+    planetUniforms.uPoly2Count.value = Math.min(icelandPoly.length, 32);
+    for (let i = 0; i < planetUniforms.uPoly2Count.value; i++) {
+      planetUniforms.uPoly2.value[i].set(icelandPoly[i][0], icelandPoly[i][1]);
+    }
+    planetUniforms.uPoly3Count.value = Math.min(southPoly.length, 32);
+    for (let i = 0; i < planetUniforms.uPoly3Count.value; i++) {
+      planetUniforms.uPoly3.value[i].set(southPoly[i][0], southPoly[i][1]);
+    }
+    planetUniforms.uIslandCount.value = 0;
+
+    menuItems.forEach(item => {
+      let pos;
+      if (item.title === "Home") pos = homeDir.clone();
+      else if (item.title === "Islanda") pos = islandaDir.clone();
+      else if (item.title === "SudAmerica") pos = sudDir.clone();
+      else pos = pickPoint();
+      const normal = pos.clone().normalize();
+      const profile = islandProfiles[item.title] || islandProfiles.Progetti;
+
+      // Disegna solo Home, Islanda, SudAmerica
+      if (item.title !== "Home" && item.title !== "Islanda" && item.title !== "SudAmerica") return;
+
+      // Passa i dati delle isole allo shader del pianeta (render aderente)
+      const idx = planetUniforms.uIslandCount.value;
+      if (idx < 5) {
+        planetUniforms.uIslands.value[idx].copy(normal);
+        planetUniforms.uIslandSize.value[idx] = profile.size;
+        planetUniforms.uIslandColor.value[idx].set(profile.color);
+        planetUniforms.uIslandSeed.value[idx] = profile.seed1;
+        planetUniforms.uIslandSeed2.value[idx] = profile.seed2;
+        planetUniforms.uIslandSeed3.value[idx] = profile.seed3;
+        planetUniforms.uIslandWobble.value[idx] = profile.wobble;
+        planetUniforms.uIslandStretchLat.value[idx] = profile.stretchLat;
+        planetUniforms.uIslandStretchLon.value[idx] = profile.stretchLon;
+        planetUniforms.uIslandCut.value[idx] = profile.cut || 0;
+        planetUniforms.uIslandCount.value++;
+      }
+    });
+
+    const light = new THREE.DirectionalLight("#c9d8ff", 1.2);
+    light.position.set(3, 2, 3);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight("#1b234a", 0.6));
+
+    const resetBtn = document.getElementById("reset");
+    resetBtn.addEventListener("click", () => {
+      camera.position.set(0, 0.7, 3.4);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    });
+
+    const toggleBtn = document.getElementById("toggle-anim");
+    toggleBtn.addEventListener("click", () => {
+      isAnimating = !isAnimating;
+    });
+
+    const infoTitle = document.querySelector("#info h2");
+    const infoText = document.querySelector("#info-text");
+    infoTitle.textContent = "Isole decorative";
+    infoText.textContent = "Ruota la sfera per esplorarle.";
+
+    window.addEventListener("resize", () => {
+      const { innerWidth, innerHeight } = window;
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      if (isAnimating) planet.rotation.y += 0.0025;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
